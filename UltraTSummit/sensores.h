@@ -14,15 +14,11 @@
 // #define JFDir 26
 // #define JDir 32
 
-bool sensores[] = {JEsq, JFEsq, JFDir, JDir};
-
 void setupSensores() {
   pinMode(JEsq, INPUT);
   pinMode(JFEsq, INPUT);
   pinMode(JFDir, INPUT);
   pinMode(JDir, INPUT);
 }
-
-
 
 #endif

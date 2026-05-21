@@ -10,7 +10,7 @@
 #include "DRV8833.h"
 #include "PID.h"
 #include "Whiplash.h"
-#include "Empate.h"
+#include "Estrategias.h"
 #include "Sharingan.h"
 #include "LEDFX.h"
 

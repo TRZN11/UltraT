@@ -82,8 +82,8 @@ void iSeeYou() { // não é uma estratégia e sim o ataque principal, mas pode s
   int velocidade_esq =  - PID;
   int velocidade_dir =  + PID;
 
-  velocidade_esq = constrain(velocidade_esq, -1023, 1023);
-  velocidade_dir = constrain(velocidade_dir, -1023, 1023);
+  velocidade_esq = constrain(velocidade_esq, -850, 850);
+  velocidade_dir = constrain(velocidade_dir, -850, 850);
 
   
   if (PID == 0) {

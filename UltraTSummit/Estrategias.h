@@ -4,7 +4,12 @@
 #include "PID.h"
 
 void paraTras() { // estratégia número 6 no controle
-  motor.move(-1023, -1023);
+  motor.move(1023, 1023);
+  delay(500);
+  motor.stop();
+  motor.move(-1023, 1023);
+  delay(350);
+  iSeeYou();
 }
 
 int EstadoAtual;
@@ -31,25 +36,26 @@ void SeekAndDestroy_L(){  // maquina de estados
     case 1:
       
       Serial.println("Searching Enemy...");
-      motor.move(1023, -1023);
+      motor.move(850, -850);
       break;
 
     case 2:
       Serial.println("ROBOT ATTACK!");
-      
       motor.move(1023, 1023);
       break;
 
      case 3:
       
       Serial.println("Left Detected!");
-      motor.move(-1023, 1023);
+      motor.move(-850, 850);
+      motor.stop();
       break;
 
       case 4:
       
       Serial.println("Right Detected!");
-      motor.move(1023, -1023);
+      motor.move(850, -850);
+      motor.stop();
       break;
   }
 }
@@ -61,7 +67,8 @@ void SeekAndDestroy_R(){  // maquina de estados
 
     case 1:
       Serial.println("Searching Enemy...");
-      motor.move(-1023, 1023);
+      motor.move(-850, 850);
+      motor.stop();
       break;
 
     case 2:
@@ -71,12 +78,14 @@ void SeekAndDestroy_R(){  // maquina de estados
 
     case 3:
       Serial.println("Left Detected!");
-      motor.move(-1023, 1023);
+      motor.move(-850, 850);
+      motor.stop();
       break;
 
     case 4:
       Serial.println("Right Detected!");
-      motor.move(1023, -1023);
+      motor.move(850, -850);
+      motor.stop();
       break;
   }
 }

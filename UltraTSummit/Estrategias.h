@@ -1,5 +1,5 @@
-#ifndef empate_H
-#define empate_H
+#ifndef Estrategias_H
+#define Estrategias_H
 
 #include "PID.h"
 

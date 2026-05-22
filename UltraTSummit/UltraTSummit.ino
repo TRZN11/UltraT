@@ -76,6 +76,8 @@ void loop() {
         case 8:
           whiplash();
         break;
+        case 9:
+          sharingan();
       }
       Serial.println("-> sumo on"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
     }

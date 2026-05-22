@@ -11,7 +11,7 @@ DRV8833 motor(18, 19, 4, 23); // caçadora 19, 18, 23, 4 // ultra t 19, 18, 23, 
 
 
 // Leitura dos sensores
-int leitura[4]; // [0]=esq, [1]=frente-esq, [2]=frente-dir, [3]=dir
+int leitura[5]; // [0]=esq, [1]=frente-esq, [2]=frente-dir, [3]=dir, [5] =stop
 
 // Velocidades e parâmetros PID
 int vel_base = 550;
@@ -28,6 +28,7 @@ void leituraSensores() {
   leitura[1] = digitalRead(JFEsq);
   leitura[2] = digitalRead(JFDir);
   leitura[3] = digitalRead(JDir);
+  leitura[5] =  motor.stop(); 
 }
 
 void leituraSensoresSD() { // leitura diferente exclusiva pra Seek and Destroy
@@ -89,7 +90,7 @@ void iSeeYou() { // não é uma estratégia e sim o ataque principal, mas pode s
   if (PID == 0) {
     motor.move(1023, 1023);
   } else {
-    motor.move(velocidade_esq, velocidade_dir);
+    motor.move(velocidade_esq, velocidade_dir);e
   }
 }
 

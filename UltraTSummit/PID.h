@@ -23,7 +23,6 @@ float Kp = 450.0, Ki = 0.0, Kd = 0.0;
 unsigned long last_time = 0;
 
 
-
 void leituraSensores() {
   leitura[0] = digitalRead(JEsq);
   leitura[1] = digitalRead(JFEsq);

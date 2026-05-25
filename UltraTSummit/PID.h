@@ -11,7 +11,7 @@ DRV8833 motor(18, 19, 4, 23); // caçadora 19, 18, 23, 4 // ultra t 19, 18, 23, 
 
 
 // Leitura dos sensores
-int leitura[1]; // [0]=esq, [1]=frente-esq, [2]=frente-dir, [3]=dir, [5] =stop
+int leitura[4]; // [0]=esq, [1]=frente-esq, [2]=frente-dir, [3]=dir
 
 // Velocidades e parâmetros PID
 int vel_base = 550;
@@ -82,8 +82,8 @@ void iSeeYou() { // não é uma estratégia e sim o ataque principal, mas pode s
   int velocidade_esq =  - PID;
   int velocidade_dir =  + PID;
 
-  velocidade_esq = constrain(velocidade_esq, -850, 850);
-  velocidade_dir = constrain(velocidade_dir, -850, 850);
+  velocidade_esq = constrain(velocidade_esq, -1023, 1023);
+  velocidade_dir = constrain(velocidade_dir, -1023, 1023);
 
   
   if (PID == 0) {

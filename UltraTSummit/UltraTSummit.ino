@@ -6,97 +6,76 @@
 
   https://github.com/eltonsrgit/UltraTSummit/
 */
-#include "SumoIR.h"
 #include "DRV8833.h"
 #include "PID.h"
 #include "Whiplash.h"
 #include "Estrategias.h"
 #include "Sharingan.h"
 #include "LEDFX.h"
-
+#include "ModuloStart.h"
+#include "SeletorEstrategia.h"
 // começa no modo em que está "true"
 // trocar se não funcionar
-
 #define boot 0 
 
 int strategy = 0;
 
-SumoIR IR;
 // protótipo da callback (declarado antes do setup para que o registro funcione)
 
 void setup() {
   Serial.begin(115200);
-
-  IR.begin(15); // sensor conectado no pino 15 (não mudar)
-  
+  motor.begin();
+  moduloStart.begin();// sensor conectado no pino 15 (não mudar)
   setupSensores();
-
   pinMode(boot, INPUT_PULLUP);
-
+  pixels.begin();
 }
 int gatilhoNorm = 0; // -255 até 255
 int rodaNorm = 0;    // -127 até 127
 
 void loop() {
-    IR.update();
- 
-    if (IR.prepare()) { // número 1 no controle
-      pixels.clear();
-      ledLight(255, 255, 255);
-      motor.stop();
-      Serial.println("-> sumo prepare"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
+  moduloStart.atualizar();
+
+  if (moduloStart.preparado()) {
+    // passa o resultado IR do ModuloStart para o seletor
+    seletorEstrategia.atualizar(moduloStart.ultimoResultado());
+    Serial.println(seletorEstrategia.nomeAtual());
+  }
+
+  if (moduloStart.emCombate()) {
+    switch (seletorEstrategia.estrategiaAtual()) {
+      case ESTRATEGIA_1: iSeeYou();          break;
+      case ESTRATEGIA_2: whiplash();         break;
+      case ESTRATEGIA_3: Sharingan();        break;
+      case ESTRATEGIA_4: SeekAndDestroy_L(); break;
+      case ESTRATEGIA_5: SeekAndDestroy_R(); break;
+      case ESTRATEGIA_6: paraTras();         break;
     }
+  }
+
     
-    else if (IR.start()) {
-      Serial.println("-> sumo start"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
+    else if (moduloStart.preparado()) {
+      Serial.println("(PREPARAR recebido novamente — ja preparado)"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
     } 
     
-    else if (IR.on()) { // número 2 no controle
+    else if (moduloStart.emCombate()) { // número 2 no controle
       pixels.clear();
       ledLight(0, 255, 0);
-      
-      switch (strategy) {
-        default: //fallthrough
-        case 4:
-          iSeeYou();
-        break;
-
-        case 5:
-          paraTras();
-        break;
-
-        case 6:
-          SeekAndDestroy_L();
-        break;
-
-        case 7:
-          SeekAndDestroy_R();
-        break; 
-
-        case 8:
-          whiplash();
-        break;
-        case 9:
-          sharingan();
-      }
-      Serial.println("-> sumo on"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
+     Serial.println(seletorEstrategia.nomeAtual());
     }
-    
-    else if (IR.stop()) { // número 3 no controle
+    else if (moduloStart.parado()) { // número 3 no controle
       pixels.clear();
       motor.stop();
       Serial.println("-> sumo stop"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
     }
-    
-    else { // robô inicia caindo aqui
-      pixels.clear();
-      strategySelection();     // seletor de estratégias
-      ledDetection();
-      Serial.println("-> sumo off"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR)
-    } 
+  }
 }
-void strategySelection() {
-  int cmd = IR.read();
+void LED_Estrategias() {
+
+  decode_results* resultado = moduloStart.ultimoResultado();
+  if (!resultado) return;
+  uint64_t cmd = resultado->value;
+
   if (cmd >= 4 && cmd <= 9) { 
     strategy = cmd;
   } else return;
@@ -105,12 +84,12 @@ void strategySelection() {
     const int num_leds = cmd % 8;
     for(uint8_t i = 0; i < num_leds; i++) {
       switch ((cmd-3) % 6) { 
-        case 0: pixels.setPixelColor(i, pixels.Color(255, 50,  50  )); break; // Vermelho claro
-        case 1: pixels.setPixelColor(i, pixels.Color(0,   255, 100 )); break; // Verde com toque de azul
-        case 2: pixels.setPixelColor(i, pixels.Color(255, 0,   180 )); break; // Magenta
-        case 3: pixels.setPixelColor(i, pixels.Color(255, 140, 0   )); break; // Laranja
-        case 4: pixels.setPixelColor(i, pixels.Color(100, 200, 255 )); break; // Azul claro
-        case 5: pixels.setPixelColor(i, pixels.Color(180, 255, 0   )); break; // Verde-amarelado
+        case ESTRATEGIA_1: pixels.setPixelColor(i, pixels.Color(255, 50,  50  )); break; // Vermelho claro
+        case ESTRATEGIA_2: pixels.setPixelColor(i, pixels.Color(0,   255, 100 )); break; // Verde com toque de azul
+        case ESTRATEGIA_3: pixels.setPixelColor(i, pixels.Color(255, 0,   180 )); break; // Magenta
+        case ESTRATEGIA_4: pixels.setPixelColor(i, pixels.Color(255, 140, 0   )); break; // Laranja
+        case ESTRATEGIA_5: pixels.setPixelColor(i, pixels.Color(100, 200, 255 )); break; // Azul claro
+        case ESTRATEGIA_6: pixels.setPixelColor(i, pixels.Color(180, 255, 0   )); break; // Verde-amarelado
       } pixels.show();
     }
     delay(80);

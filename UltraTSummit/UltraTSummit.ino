@@ -6,6 +6,7 @@
 
   https://github.com/eltonsrgit/UltraTSummit/
 */
+
 #include "DRV8833.h"
 #include "PID.h"
 #include "Whiplash.h"
@@ -14,34 +15,45 @@
 #include "LEDFX.h"
 #include "ModuloStart.h"
 #include "SeletorEstrategia.h"
-// começa no modo em que está "true"
-// trocar se não funcionar
-#define boot 0 
 
-int strategy = 0;
-
-// protótipo da callback (declarado antes do setup para que o registro funcione)
+#define boot 0
 
 void setup() {
   Serial.begin(115200);
   motor.begin();
-  moduloStart.begin();// sensor conectado no pino 15 (não mudar)
+  moduloStart.begin();   // sensor IR no pino 15 (não mudar)
   setupSensores();
-  pinMode(boot, INPUT_PULLUP);
   pixels.begin();
+  pinMode(boot, INPUT_PULLUP);
 }
 
 void loop() {
   moduloStart.atualizar();
   motor.update();  // Processa fila de movimentos com timers
 
-  if (moduloStart.preparado()) {
-    // passa o resultado IR do ModuloStart para o seletor
+  // ── DESLIGADO: antes do PREPARAR ─────────────────────────
+  if (moduloStart.desligado()) {
+    pixels.clear();
+    ledDetection(); // mostra leitura dos sensores nos LEDs
+  }
+
+  // ── PREPARADO: escolha de estratégia ─────────────────────
+  else if (moduloStart.preparado()) {
+    // passa o sinal IR do ModuloStart para o seletor
     seletorEstrategia.atualizar(moduloStart.ultimoResultado());
+
+    // feedback visual da estratégia selecionada
+    LED_Estrategias();
+    motor.stop();
+    Serial.print("Estrategia: ");
     Serial.println(seletorEstrategia.nomeAtual());
   }
 
-  if (moduloStart.emCombate()) {
+  // ── COMBATE: executa a estratégia escolhida ───────────────
+  else if (moduloStart.emCombate()) {
+    pixels.clear();
+    ledLight(0, 255, 0); // LED verde = combate ativo
+
     switch (seletorEstrategia.estrategiaAtual()) {
       case ESTRATEGIA_1: iSeeYou();          break;
       case ESTRATEGIA_2: whiplash();         break;
@@ -70,33 +82,27 @@ void loop() {
     }
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+//  Feedback visual no anel de LEDs conforme estratégia atual
+// ─────────────────────────────────────────────────────────────
 void LED_Estrategias() {
+uint32_t cores[6] = {
+    pixels.Color(0,  255,  255),   // 1 — Vermelho    (iSeeYou)
+    pixels.Color(0,  255,  255),   // 2 — Verde-água  (Whiplash)
+    pixels.Color(0,  255,  255),   // 3 — Magenta     (Sharingan)
+    pixels.Color(0,  255,  255),   // 4 — Laranja     (SeekAndDestroy L)
+    pixels.Color(0,  255,  255),   // 5 — Azul claro  (SeekAndDestroy R)
+    pixels.Color(0,  255,  255),   // 6 — Verde-limão (Para Tras)
+  };
 
-  decode_results* resultado = moduloStart.ultimoResultado();
-  if (!resultado) return;
-  uint64_t cmd = resultado->value;
+  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
+  int num_leds = idx + 1;                             // 1 a 6 LEDs
 
-  if (cmd >= 4 && cmd <= 9) { 
-    strategy = cmd;
-  } else return;
-
-  if (cmd <= 8) {
-    const int num_leds = cmd % 8;
-    for(uint8_t i = 0; i < num_leds; i++) {
-      switch ((cmd-3) % 6) { 
-        case ESTRATEGIA_1: pixels.setPixelColor(i, pixels.Color(255, 50,  50  )); break; // Vermelho claro
-        case ESTRATEGIA_2: pixels.setPixelColor(i, pixels.Color(0,   255, 100 )); break; // Verde com toque de azul
-        case ESTRATEGIA_3: pixels.setPixelColor(i, pixels.Color(255, 0,   180 )); break; // Magenta
-        case ESTRATEGIA_4: pixels.setPixelColor(i, pixels.Color(255, 140, 0   )); break; // Laranja
-        case ESTRATEGIA_5: pixels.setPixelColor(i, pixels.Color(100, 200, 255 )); break; // Azul claro
-        case ESTRATEGIA_6: pixels.setPixelColor(i, pixels.Color(180, 255, 0   )); break; // Verde-amarelado
-      } pixels.show();
-    }
-    delay(80);
-    for(uint8_t i = 0; i < num_leds; i++) { 
-      pixels.setPixelColor(i, pixels.Color(0, 0, 0)); // Desliga os LEDs
-      pixels.show();
-    }
-    delay(80);
+  pixels.clear();
+  for (int i = 0; i < num_leds; i++) {
+    pixels.setPixelColor(i, cores[idx]);
   }
+  pixels.show();
 }
+

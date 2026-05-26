@@ -30,8 +30,6 @@ void setup() {
   pinMode(boot, INPUT_PULLUP);
   pixels.begin();
 }
-int gatilhoNorm = 0; // -255 até 255
-int rodaNorm = 0;    // -127 até 127
 
 void loop() {
   moduloStart.atualizar();

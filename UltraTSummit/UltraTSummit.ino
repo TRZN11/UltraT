@@ -28,7 +28,8 @@ void setup() {
 }
 
 void loop() {
-  moduloStart.atualizar(); // sempre primeira linha do loop
+  moduloStart.atualizar();
+  motor.update();  // Processa fila de movimentos com timers
 
   // ── DESLIGADO: antes do PREPARAR ─────────────────────────
   if (moduloStart.desligado()) {
@@ -63,11 +64,22 @@ void loop() {
     }
   }
 
-  // ── PARADO: emergência ou fim de round ───────────────────
-  else if (moduloStart.parado()) {
-    pixels.clear();
-    motor.stop();
-    Serial.println("-> sumo stop");
+    
+    else if (moduloStart.preparado()) {
+      Serial.println("(PREPARAR recebido novamente — ja preparado)"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
+    } 
+    
+    else if (moduloStart.emCombate()) { // número 2 no controle
+      pixels.clear();
+      ledLight(0, 255, 0);
+     Serial.println(seletorEstrategia.nomeAtual());
+    }
+    else if (moduloStart.parado()) { // número 3 no controle
+      motor.clear_moving();  // Limpa fila de movimentos pendentes
+      motor.stop();
+      pixels.clear();
+      Serial.println("-> sumo stop");
+    }
   }
 }
 

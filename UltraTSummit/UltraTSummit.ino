@@ -43,8 +43,6 @@ void loop() {
 
     // feedback visual da estratégia selecionada
     LED_Estrategias();
-
-    ledLight(0,0,0); // LED branco = aguardando
     motor.stop();
     Serial.print("Estrategia: ");
     Serial.println(seletorEstrategia.nomeAtual());
@@ -77,33 +75,22 @@ void loop() {
 //  Feedback visual no anel de LEDs conforme estratégia atual
 // ─────────────────────────────────────────────────────────────
 void LED_Estrategias() {
+uint32_t cores[6] = {
+    pixels.Color(0,  255,  255),   // 1 — Vermelho    (iSeeYou)
+    pixels.Color(0,  255,  255),   // 2 — Verde-água  (Whiplash)
+    pixels.Color(0,  255,  255),   // 3 — Magenta     (Sharingan)
+    pixels.Color(0,  255,  255),   // 4 — Laranja     (SeekAndDestroy L)
+    pixels.Color(0,  255,  255),   // 5 — Azul claro  (SeekAndDestroy R)
+    pixels.Color(0,  255,  255),   // 6 — Verde-limão (Para Tras)
+  };
 
-  decode_results* resultado = moduloStart.ultimoResultado();
-  if (!resultado) return;
-  uint64_t cmd = resultado->value;
+  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
+  int num_leds = idx + 1;                             // 1 a 6 LEDs
 
-  if (cmd >= 4 && cmd <= 9) { 
-    strategy = cmd;
-  } else return;
-
-  if (cmd <= 8) {
-    const int num_leds = cmd % 8;
-    for(uint8_t i = 0; i < num_leds; i++) {
-      switch ((cmd-3) % 6) { 
-        case ESTRATEGIA_1: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Vermelho claro
-        case ESTRATEGIA_2: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Verde com toque de azul
-        case ESTRATEGIA_3: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Magenta
-        case ESTRATEGIA_4: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Laranja
-        case ESTRATEGIA_5: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Azul claro
-        case ESTRATEGIA_6: pixels.setPixelColor(i, pixels.Color(255, 255,  255 )); break; // Verde-amarelado
-      } pixels.show();
-    }
-    delay(80);
-    for(uint8_t i = 0; i < num_leds; i++) { 
-      pixels.setPixelColor(i, pixels.Color(0, 0, 0)); // Desliga os LEDs
-      pixels.show();
-    }
-    delay(80);
+  pixels.clear();
+  for (int i = 0; i < num_leds; i++) {
+    pixels.setPixelColor(i, cores[idx]);
   }
+  pixels.show();
 }
 

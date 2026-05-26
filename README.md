@@ -1,4 +1,4 @@
-# Mini Sumo Auto/RC Ultra T (Update: 26/05/2026)
+# Mini Sumo Auto Ultra T (Update: 26/05/2026)
   Ultra T é um robô feito pela Equipe de Robótica da UERJ, a UERJBotz. Seu design foi feito para se assemelhar ao personagem fictício de mesmo nome.
  <div align="center">
   <img src="https://github.com/user-attachments/assets/ad887140-48a0-4c51-8952-10f8e7772970" width="800">

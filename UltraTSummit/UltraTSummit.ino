@@ -62,9 +62,11 @@ void loop() {
      Serial.println(seletorEstrategia.nomeAtual());
     }
     else if (moduloStart.parado()) { // número 3 no controle
+      motor.stop();
       pixels.clear();
       motor.stop();
       Serial.println("-> sumo stop"); // não retirar essa linha (aparentemente dá erro para iniciar com o IR
+      motor.stop();
     }
   }
 }

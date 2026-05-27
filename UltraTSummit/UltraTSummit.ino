@@ -76,12 +76,12 @@ void loop() {
 // ─────────────────────────────────────────────────────────────
 void LED_Estrategias() {
 uint32_t cores[6] = {
-    pixels.Color(0,  255,  255),   // 1 — Vermelho    (iSeeYou)
-    pixels.Color(0,  255,  255),   // 2 — Verde-água  (Whiplash)
-    pixels.Color(0,  255,  255),   // 3 — Magenta     (Sharingan)
-    pixels.Color(0,  255,  255),   // 4 — Laranja     (SeekAndDestroy L)
-    pixels.Color(0,  255,  255),   // 5 — Azul claro  (SeekAndDestroy R)
-    pixels.Color(0,  255,  255),   // 6 — Verde-limão (Para Tras)
+    pixels.Color(0,  255,  255),   // 1 — (iSeeYou)
+    pixels.Color(0,  255,  255),   // 2 — (Whiplash)
+    pixels.Color(0,  255,  255),   // 3 — (Sharingan)
+    pixels.Color(0,  255,  255),   // 4 — (SeekAndDestroy L)
+    pixels.Color(0,  255,  255),   // 5 — (SeekAndDestroy R)
+    pixels.Color(0,  255,  255),   // 6 — (Para Tras)
   };
 
   int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5

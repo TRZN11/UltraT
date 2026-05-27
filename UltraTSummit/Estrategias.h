@@ -4,11 +4,10 @@
 #include "PID.h"
 
 void paraTras() { // estratégia número 6 no controle
-  motor.move(1023, 1023);
-  delay(500);
-  motor.stop();
-  motor.move(-1023, 1023);
-  delay(350);
+  // Usa timers não-bloqueantes em vez de delay()
+  // Move para frente por 500ms, depois para trás por 350ms, depois executa iSeeYou
+  motor.move_for_then(1023, 1023, 500,
+                      -1023, 1023, 350);
   iSeeYou();
 }
 

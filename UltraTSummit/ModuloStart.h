@@ -130,11 +130,6 @@ public:
     if (codigo != 0 && codigo == _cmd_parar && _estado != START_DESLIGADO) {
       _estado = START_PARADO;
       _log("PARADA DE EMERGENCIA — juiz interrompeu!");
-      // CORREÇÃO: NÃO chamar _blink() aqui — ele usa delay() e bloqueava
-      // o loop() por ~1.2s (6 x 200ms), atrasando a chamada de motor.stop()
-      // no .ino por esse tempo todo (o motor continuava girando na última
-      // velocidade comandada). O LED já pisca de forma NÃO-bloqueante no
-      // case START_PARADO logo abaixo, então o feedback visual continua.
       return;
     }
 

@@ -5,12 +5,7 @@
 #include "Sensores.h"
 #include "DRV8833.h"
 
-// sujeito a mudanças se os motores forem retirados
-// caso isso aconteça, rodar um programa simples para testar o sentido dos motores (ir pra frente depois pra trás)
-//
-// Teste de diagnóstico concluído: a lentidão permaneceu no mesmo motor físico
-// mesmo trocando a ordem lógica dos pinos -> confirmado que é HARDWARE, não software.
-// Voltando à configuração original.
+
 DRV8833 motor(18, 19, 4, 23); // caçadora 19, 18, 23, 4 // ultra t 19, 18, 23, 4
 
 

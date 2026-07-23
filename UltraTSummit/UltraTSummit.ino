@@ -4,7 +4,7 @@
   Alimentar o ESP32 C3 Mini do rádio pistola com um power bank ou um celular, as pilhas podem não dar conta,
   afetando a direção do robô;
 
-  https://github.com/eltonsrgit/UltraTSummit/
+  https://github.com/TRZN11/UltraT/blob/main/UltraTSummit
 */
 
 #include "DRV8833.h"
@@ -24,7 +24,28 @@ void setup() {
   moduloStart.begin();   // sensor IR no pino 15 (não mudar)
   setupSensores();
   pixels.begin();
+  pixels.setBrightness(40); // 0 (apagado) a 255 (máximo) — ajuste aqui pra calibrar o brilho
   pinMode(boot, INPUT_PULLUP);
+}
+
+void LED_Estrategias() {
+uint32_t cores[6] = {
+    pixels.Color(0,125,125),   // 1 — (iSeeYou)
+    pixels.Color(0,125,125),   // 2 — (Whiplash)
+    pixels.Color(0,125,125),   // 3 — (Sharingan)
+    pixels.Color(0,125,125),   // 4 — (SeekAndDestroy L)
+    pixels.Color(0,125,125),   // 5 — (SeekAndDestroy R)
+    pixels.Color(0,125,125),   // 6 — (Para Tras)
+  };
+
+  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
+  int num_leds = idx + 1;                             // 1 a 6 LEDs
+
+  pixels.clear();
+  for (int i = 0; i < num_leds; i++) {
+    pixels.setPixelColor(i, cores[idx]);
+  }
+  pixels.show();
 }
 
 void loop() {
@@ -33,17 +54,16 @@ void loop() {
 
   // ── DESLIGADO: antes do PREPARAR ─────────────────────────
   if (moduloStart.desligado()) {
-    pixels.clear();
-    ledDetection(); // mostra leitura dos sensores nos LEDs
+    LED_Estrategias();
+    seletorEstrategia.atualizar(moduloStart.ultimoResultado());
+    Serial.print("Estrategia: ");
+    Serial.println(seletorEstrategia.nomeAtual()); // mostra leitura dos sensores nos LEDs
   }
 
   // ── PREPARADO: escolha de estratégia ─────────────────────
   else if (moduloStart.preparado()) {
-    // passa o sinal IR do ModuloStart para o seletor
-    seletorEstrategia.atualizar(moduloStart.ultimoResultado());
-
-    // feedback visual da estratégia selecionada
-    LED_Estrategias();
+    pixels.clear();
+    ledDetection();
     motor.stop();
     Serial.print("Estrategia: ");
     Serial.println(seletorEstrategia.nomeAtual());
@@ -71,7 +91,7 @@ void loop() {
     
     else if (moduloStart.emCombate()) { // número 2 no controle
       pixels.clear();
-      ledLight(0, 255, 0);
+      ledLight(0, 125, 0);
      Serial.println(seletorEstrategia.nomeAtual());
     }
     else if (moduloStart.parado()) { // número 3 no controle
@@ -81,28 +101,8 @@ void loop() {
       Serial.println("-> sumo stop");
     }
   }
-}
+
 
 // ─────────────────────────────────────────────────────────────
 //  Feedback visual no anel de LEDs conforme estratégia atual
 // ─────────────────────────────────────────────────────────────
-void LED_Estrategias() {
-uint32_t cores[6] = {
-    pixels.Color(0,  255,  255),   // 1 — (iSeeYou)
-    pixels.Color(0,  255,  255),   // 2 — (Whiplash)
-    pixels.Color(0,  255,  255),   // 3 — (Sharingan)
-    pixels.Color(0,  255,  255),   // 4 — (SeekAndDestroy L)
-    pixels.Color(0,  255,  255),   // 5 — (SeekAndDestroy R)
-    pixels.Color(0,  255,  255),   // 6 — (Para Tras)
-  };
-
-  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
-  int num_leds = idx + 1;                             // 1 a 6 LEDs
-
-  pixels.clear();
-  for (int i = 0; i < num_leds; i++) {
-    pixels.setPixelColor(i, cores[idx]);
-  }
-  pixels.show();
-}
-

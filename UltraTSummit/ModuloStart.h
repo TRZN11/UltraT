@@ -130,8 +130,6 @@ public:
     if (codigo != 0 && codigo == _cmd_parar && _estado != START_DESLIGADO) {
       _estado = START_PARADO;
       _log("PARADA DE EMERGENCIA — juiz interrompeu!");
-      _blink(6, 100);
-      return;
     }
 
     switch (_estado) {
@@ -169,7 +167,9 @@ public:
         if (agora - _tRound >= TEMPO_ROUND_MS) {
           _estado = START_PARADO;
           _log("TEMPO ESGOTADO — fim do round!");
-          _blink(5, 200);
+          // Mesmo motivo do PARADA DE EMERGENCIA acima: sem delay()
+          // bloqueante aqui, para que motor.stop() no .ino rode
+          // imediatamente no próximo loop().
           break;
         }
         if (codigo != 0 && codigo == _cmd_iniciar) {

@@ -11,19 +11,9 @@ void paraTras() { // estratégia número 6 no controle
   iSeeYou();
 }
 
-// ============================================================
-//  SeekAndDestroy — busca em semicírculo pela lateral da arena
-//  (100% BLOQUEANTE: completa o semicírculo inteiro sem checar
-//   sensores nem a parada de emergência, e só DEPOIS aciona o PID)
-// ============================================================
-//  CALIBRAÇÃO:
-//   *_EXTERNO    = roda de fora do arco -> deixe sempre no máximo (1023)
-//   *_INTERNO    = roda de dentro do arco -> ajusta a curvatura
-//   *_DURACAO_MS = por quanto tempo o semicírculo roda antes de acionar o PID
-// ============================================================
 
 int      SND_L_EXTERNO    = 1023;
-int      SND_L_INTERNO    = 300;   // CALIBRE AQUI — curvatura da busca ESQUERDA
+int      SND_L_INTERNO    = 700;   // CALIBRE AQUI — curvatura da busca ESQUERDA
 uint32_t SND_L_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo esquerdo (ms)
 
 int      SND_R_EXTERNO    = 1023;
@@ -33,17 +23,15 @@ uint32_t SND_R_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo
 bool _SND_L_feito = false;
 bool _SND_R_feito = false;
 
-// Chame no início de cada round (o .ino já faz isso sozinho) pra permitir
-// que o semicírculo rode de novo na próxima vez que a estratégia for usada
+
 void resetSeekAndDestroy() {
   _SND_L_feito = false;
   _SND_R_feito = false;
 }
 
-// Movimento 100% bloqueante — não sai por nada até o tempo acabar
 void _semicirculoBloqueante(int vl, int vr, uint32_t duracao_ms) {
-  motor.move(vl, vr);
-  delay(duracao_ms);
+  motor.move_for(vl, vr, duracao_ms);
+  delay(duracao_ms); // segura aqui até o tempo do movimento passar
 }
 
 void SeekAndDestroy_L(){ // estratégia número 4 no controle — busca pela lateral ESQUERDA

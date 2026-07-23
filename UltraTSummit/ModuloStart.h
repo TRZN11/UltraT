@@ -141,7 +141,6 @@ public:
         if (codigo != 0 && codigo == _cmd_preparar) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
-          _blink(3, 150);
         }
         break;
 
@@ -168,9 +167,6 @@ public:
         if (agora - _tRound >= TEMPO_ROUND_MS) {
           _estado = START_PARADO;
           _log("TEMPO ESGOTADO — fim do round!");
-          // Mesmo motivo do PARADA DE EMERGENCIA acima: sem delay()
-          // bloqueante aqui, para que motor.stop() no .ino rode
-          // imediatamente no próximo loop().
           break;
         }
         if (codigo != 0 && codigo == _cmd_iniciar) {
@@ -187,7 +183,6 @@ public:
         if (codigo != 0 && codigo == _cmd_preparar) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
-          _blink(3, 150);
         }
         break;
     }

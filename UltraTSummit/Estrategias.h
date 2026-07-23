@@ -13,53 +13,57 @@ void paraTras() { // estratégia número 6 no controle
 
 // ============================================================
 //  SeekAndDestroy — busca em semicírculo pela lateral da arena
+//  (100% BLOQUEANTE: completa o semicírculo inteiro sem checar
+//   sensores nem a parada de emergência, e só DEPOIS aciona o PID)
 // ============================================================
-//  Enquanto os sensores frontais não veem o oponente, o robô anda
-//  para frente em velocidade máxima só que fazendo uma curva (arco),
-//  percorrendo a lateral esquerda (ou direita) da arena — como um
-//  semicírculo. Assim que qualquer sensor frontal detecta o oponente,
-//  o robô larga a curva e entrega o controle para o PID (iSeeYou),
-//  que faz o alinhamento fino e o ataque.
-//
-//  CALIBRAÇÃO DO RAIO DA CURVA (é aqui que você ajusta o robô):
-//   *_EXTERNO = roda de FORA do arco -> deixe sempre no máximo (1023)
-//   *_INTERNO = roda de DENTRO do arco -> ajuste este valor:
-//       perto de 1023 (igual ao externo)  -> quase reto, curva bem aberta
-//       valores baixos (ex.: 200 a 400)   -> curva mais fechada
-//       0                                  -> gira apoiado numa roda só
-//       negativo (ex.: -300)               -> curva bem fechada, quase um giro no próprio eixo
+//  CALIBRAÇÃO:
+//   *_EXTERNO    = roda de fora do arco -> deixe sempre no máximo (1023)
+//   *_INTERNO    = roda de dentro do arco -> ajusta a curvatura
+//   *_DURACAO_MS = por quanto tempo o semicírculo roda antes de acionar o PID
 // ============================================================
 
-int SND_L_EXTERNO = 1023;  // roda direita (de fora) na busca ESQUERDA
-int SND_L_INTERNO = 300;   // roda esquerda (de dentro) na busca ESQUERDA — CALIBRE AQUI
+int      SND_L_EXTERNO    = 1023;
+int      SND_L_INTERNO    = 300;   // CALIBRE AQUI — curvatura da busca ESQUERDA
+uint32_t SND_L_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo esquerdo (ms)
 
-int SND_R_EXTERNO = 1023;  // roda esquerda (de fora) na busca DIREITA
-int SND_R_INTERNO = 300;   // roda direita (de dentro) na busca DIREITA — CALIBRE AQUI
+int      SND_R_EXTERNO    = 1023;
+int      SND_R_INTERNO    = 300;   // CALIBRE AQUI — curvatura da busca DIREITA
+uint32_t SND_R_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo direito (ms)
+
+bool _SND_L_feito = false;
+bool _SND_R_feito = false;
+
+// Chame no início de cada round (o .ino já faz isso sozinho) pra permitir
+// que o semicírculo rode de novo na próxima vez que a estratégia for usada
+void resetSeekAndDestroy() {
+  _SND_L_feito = false;
+  _SND_R_feito = false;
+}
+
+// Movimento 100% bloqueante — não sai por nada até o tempo acabar
+void _semicirculoBloqueante(int vl, int vr, uint32_t duracao_ms) {
+  motor.move(vl, vr);
+  delay(duracao_ms);
+}
 
 void SeekAndDestroy_L(){ // estratégia número 4 no controle — busca pela lateral ESQUERDA
-  leituraSensoresSD();
-  bool viuOponente = leitura[1] || leitura[2]; // algum sensor frontal viu o oponente
-
-  if (viuOponente) {
-    Serial.println("SeekAndDestroy_L: oponente na frente -> PID (iSeeYou)");
-    iSeeYou(); // solta o arco e deixa o PID alinhar/atacar
-  } else {
-    Serial.println("SeekAndDestroy_L: buscando (arco pela lateral esquerda)");
-    motor.move(SND_L_INTERNO, SND_L_EXTERNO); // esquerda mais lenta -> curva pra esquerda
+  if (!_SND_L_feito) {
+    Serial.println("SeekAndDestroy_L: executando semicirculo (bloqueante)...");
+    _semicirculoBloqueante(SND_L_INTERNO, SND_L_EXTERNO, SND_L_DURACAO_MS);
+    _SND_L_feito = true;
+    Serial.println("SeekAndDestroy_L: semicirculo concluido -> PID (iSeeYou)");
   }
+  iSeeYou(); // depois do semicírculo, PID assume o resto do round
 }
 
 void SeekAndDestroy_R(){ // estratégia número 5 no controle — busca pela lateral DIREITA
-  leituraSensoresSD();
-  bool viuOponente = leitura[1] || leitura[2];
-
-  if (viuOponente) {
-    Serial.println("SeekAndDestroy_R: oponente na frente -> PID (iSeeYou)");
-    iSeeYou();
-  } else {
-    Serial.println("SeekAndDestroy_R: buscando (arco pela lateral direita)");
-    motor.move(SND_R_EXTERNO, SND_R_INTERNO); // direita mais lenta -> curva pra direita
+  if (!_SND_R_feito) {
+    Serial.println("SeekAndDestroy_R: executando semicirculo (bloqueante)...");
+    _semicirculoBloqueante(SND_R_EXTERNO, SND_R_INTERNO, SND_R_DURACAO_MS);
+    _SND_R_feito = true;
+    Serial.println("SeekAndDestroy_R: semicirculo concluido -> PID (iSeeYou)");
   }
+  iSeeYou();
 }
 
 #endif

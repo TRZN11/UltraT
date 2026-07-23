@@ -52,6 +52,15 @@ void loop() {
   moduloStart.atualizar();
   motor.update();  // Processa fila de movimentos com timers
 
+  // Detecta o INÍCIO de cada combate pra permitir que o semicírculo do
+  // SeekAndDestroy (estratégias 4 e 5) rode de novo no próximo round
+  static bool emCombateAnterior = false;
+  bool emCombateAgora = moduloStart.emCombate();
+  if (emCombateAgora && !emCombateAnterior) {
+    resetSeekAndDestroy();
+  }
+  emCombateAnterior = emCombateAgora;
+
   // ── DESLIGADO: antes do PREPARAR ─────────────────────────
   if (moduloStart.desligado()) {
     LED_Estrategias();
@@ -106,3 +115,5 @@ void loop() {
 // ─────────────────────────────────────────────────────────────
 //  Feedback visual no anel de LEDs conforme estratégia atual
 // ─────────────────────────────────────────────────────────────
+
+

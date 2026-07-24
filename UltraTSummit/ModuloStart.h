@@ -63,7 +63,7 @@
 
 // ─── Pinos ───────────────────────────────────────────────────
 #define IR_RECV_PIN      15   // Receptor IR (TSOP4838 / VS1838B)
-#define LED_STATUS_PIN    2   // LED interno do ESP32
+#define LED_STATUS_PIN   2   // LED de status (pino 2 reservado para NeoPixel)
 #define BTN_LEARN_PIN     0   // Botão BOOT — entra no modo aprendizado
 // ─────────────────────────────────────────────────────────────
 
@@ -130,7 +130,6 @@ public:
     if (codigo != 0 && codigo == _cmd_parar && _estado != START_DESLIGADO) {
       _estado = START_PARADO;
       _log("PARADA DE EMERGENCIA — juiz interrompeu!");
-      _blink(6, 100);
       return;
     }
 
@@ -142,7 +141,6 @@ public:
         if (codigo != 0 && codigo == _cmd_preparar) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
-          _blink(3, 150);
         }
         break;
 
@@ -169,7 +167,6 @@ public:
         if (agora - _tRound >= TEMPO_ROUND_MS) {
           _estado = START_PARADO;
           _log("TEMPO ESGOTADO — fim do round!");
-          _blink(5, 200);
           break;
         }
         if (codigo != 0 && codigo == _cmd_iniciar) {
@@ -186,7 +183,6 @@ public:
         if (codigo != 0 && codigo == _cmd_preparar) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
-          _blink(3, 150);
         }
         break;
     }

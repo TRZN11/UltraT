@@ -66,10 +66,22 @@ public:
       if ((RES > 0) && (RES <= 12)) PWM_RES = RES;
       PWM_MAX = (1 << PWM_RES) - 1;
       // ESP32 arduino-esp32 v3+: ledcAttach vincula pino ao canal
-      PWM_HZ = ledcAttach(p[0], HZ, PWM_RES) ? HZ : PWM_HZ;
-      ledcAttach(p[1], PWM_HZ, PWM_RES);
-      ledcAttach(p[2], PWM_HZ, PWM_RES);
-      ledcAttach(p[3], PWM_HZ, PWM_RES);
+      // DIAGNÓSTICO: cada ledcAttach() retorna true/false. Se algum canal
+      // LEDC estiver esgotado (o chip tem um número limitado de canais
+      // PWM compartilhados com todo o resto do programa), o attach falha
+      // e aparece "FALHOU" abaixo no serial monitor — é assim que
+      // confirmamos se o motor direito está sem canal PWM válido.
+      bool ok0 = ledcAttach(p[0], HZ, PWM_RES);
+      PWM_HZ = ok0 ? HZ : PWM_HZ;
+      bool ok1 = ledcAttach(p[1], PWM_HZ, PWM_RES);
+      bool ok2 = ledcAttach(p[2], PWM_HZ, PWM_RES);
+      bool ok3 = ledcAttach(p[3], PWM_HZ, PWM_RES);
+
+      Serial.printf(" | - ledcAttach: [pino %d: %s] [pino %d: %s] [pino %d: %s] [pino %d: %s]\n",
+                    p[0], ok0 ? "OK" : "FALHOU",
+                    p[1], ok1 ? "OK" : "FALHOU",
+                    p[2], ok2 ? "OK" : "FALHOU",
+                    p[3], ok3 ? "OK" : "FALHOU");
     #else
       if (RES >= 4 && RES <= 16) PWM_RES = RES;
       analogWriteResolution(PWM_RES);

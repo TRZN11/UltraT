@@ -11,82 +11,47 @@ void paraTras() { // estratégia número 6 no controle
   iSeeYou();
 }
 
-int EstadoAtual;
 
-void EstadoUpdate(){  // função que atualiza os estados
-  leituraSensoresSD();
-  EstadoAtual = 1; // sem inimigo
-  if (leitura[1] && leitura[2]){  // enxergando inimigo com os 2 sensores
-    EstadoAtual = 2;
-  } else if (!leitura[1] && leitura[2]){ // enxergando com o direito
-    EstadoAtual = 3;
-  } else if (leitura[1] && !leitura[2]){ // enxergando com o esquerdo
-    EstadoAtual = 4;
-    
-  } 
-  else {
-    EstadoAtual = 1; // sem inimigo
-  }
+int      SND_L_EXTERNO    = 1023;
+int      SND_L_INTERNO    = 700;   // CALIBRE AQUI — curvatura da busca ESQUERDA
+uint32_t SND_L_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo esquerdo (ms)
+
+int      SND_R_EXTERNO    = 1023;
+int      SND_R_INTERNO    = 300;   // CALIBRE AQUI — curvatura da busca DIREITA
+uint32_t SND_R_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo direito (ms)
+
+bool _SND_L_feito = false;
+bool _SND_R_feito = false;
+
+
+void resetSeekAndDestroy() {
+  _SND_L_feito = false;
+  _SND_R_feito = false;
 }
 
-void SeekAndDestroy_L(){  // maquina de estados
-  EstadoUpdate(); // função atualiza o estado a todo momento
-  switch (EstadoAtual){
-    case 1:
-      
-      Serial.println("Searching Enemy...");
-      motor.move(850, -850);
-      break;
-
-    case 2:
-      Serial.println("ROBOT ATTACK!");
-      motor.move(1023, 1023);
-      break;
-
-     case 3:
-      
-      Serial.println("Left Detected!");
-      motor.move(-850, 850);
-      motor.stop();
-      break;
-
-      case 4:
-      
-      Serial.println("Right Detected!");
-      motor.move(850, -850);
-      motor.stop();
-      break;
-  }
+void _semicirculoBloqueante(int vl, int vr, uint32_t duracao_ms) {
+  motor.move_for(vl, vr, duracao_ms);
+  delay(duracao_ms); // segura aqui até o tempo do movimento passar
 }
 
-void SeekAndDestroy_R(){  // maquina de estados
-  EstadoUpdate(); // função atualiza o estado a todo momento
-
-  switch (EstadoAtual){
-
-    case 1:
-      Serial.println("Searching Enemy...");
-      motor.move(-850, 850);
-      motor.stop();
-      break;
-
-    case 2:
-      Serial.println("ROBOT ATTACK!");
-      motor.move(1023, 1023);
-      break;
-
-    case 3:
-      Serial.println("Left Detected!");
-      motor.move(-850, 850);
-      motor.stop();
-      break;
-
-    case 4:
-      Serial.println("Right Detected!");
-      motor.move(850, -850);
-      motor.stop();
-      break;
+void SeekAndDestroy_L(){ // estratégia número 4 no controle — busca pela lateral ESQUERDA
+  if (!_SND_L_feito) {
+    Serial.println("SeekAndDestroy_L: executando semicirculo (bloqueante)...");
+    _semicirculoBloqueante(SND_L_INTERNO, SND_L_EXTERNO, SND_L_DURACAO_MS);
+    _SND_L_feito = true;
+    Serial.println("SeekAndDestroy_L: semicirculo concluido -> PID (iSeeYou)");
   }
+  iSeeYou(); // depois do semicírculo, PID assume o resto do round
+}
+
+void SeekAndDestroy_R(){ // estratégia número 5 no controle — busca pela lateral DIREITA
+  if (!_SND_R_feito) {
+    Serial.println("SeekAndDestroy_R: executando semicirculo (bloqueante)...");
+    _semicirculoBloqueante(SND_R_EXTERNO, SND_R_INTERNO, SND_R_DURACAO_MS);
+    _SND_R_feito = true;
+    Serial.println("SeekAndDestroy_R: semicirculo concluido -> PID (iSeeYou)");
+  }
+  iSeeYou();
 }
 
 #endif

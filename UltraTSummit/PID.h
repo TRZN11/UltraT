@@ -5,8 +5,6 @@
 #include "Sensores.h"
 #include "DRV8833.h"
 
-// sujeito a mudanças se os motores forem retirados
-// caso isso aconteça, rodar um programa simples para testar o sentido dos motores (ir pra frente depois pra trás)
 DRV8833 motor(18, 19, 4, 23); // caçadora 19, 18, 23, 4 // ultra t 19, 18, 23, 4
 
 

@@ -23,58 +23,17 @@ void setup() {
   motor.begin();
   moduloStart.begin();   // sensor IR no pino 15 (não mudar)
   setupSensores();
-  pixels.begin();
-  pixels.setBrightness(40); // 0 (apagado) a 255 (máximo) — ajuste aqui pra calibrar o brilho
   pinMode(boot, INPUT_PULLUP);
-}
-
-void LED_Estrategias() {
-uint32_t cores[6] = {
-    pixels.Color(0,125,125),   // 1 — (iSeeYou)
-    pixels.Color(0,125,125),   // 2 — (Whiplash)
-    pixels.Color(0,125,125),   // 3 — (Sharingan)
-    pixels.Color(0,125,125),   // 4 — (SeekAndDestroy L)
-    pixels.Color(0,125,125),   // 5 — (SeekAndDestroy R)
-    pixels.Color(0,125,125),   // 6 — (Para Tras)
-  };
-
-  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
-  int num_leds = idx + 1;                             // 1 a 6 LEDs
-
-  pixels.clear();
-  for (int i = 0; i < num_leds; i++) {
-    pixels.setPixelColor(i, cores[idx]);
-  }
-  pixels.show();
+  pixels.begin();
 }
 
 void loop() {
   moduloStart.atualizar();
   motor.update();  // Processa fila de movimentos com timers
 
-  // Detecta o INÍCIO de cada combate pra permitir que o semicírculo do
-  // SeekAndDestroy (estratégias 4 e 5) rode de novo no próximo round
-  static bool emCombateAnterior = false;
-  bool emCombateAgora = moduloStart.emCombate();
-  if (emCombateAgora && !emCombateAnterior) {
-    resetSeekAndDestroy();
-  }
-  emCombateAnterior = emCombateAgora;
-
-  // ── DESLIGADO: antes do PREPARAR ─────────────────────────
-  if (moduloStart.desligado()) {
-    LED_Estrategias();
+  if (moduloStart.preparado()) {
+    // passa o resultado IR do ModuloStart para o seletor
     seletorEstrategia.atualizar(moduloStart.ultimoResultado());
-    Serial.print("Estrategia: ");
-    Serial.println(seletorEstrategia.nomeAtual()); // mostra leitura dos sensores nos LEDs
-  }
-
-  // ── PREPARADO: escolha de estratégia ─────────────────────
-  else if (moduloStart.preparado()) {
-    pixels.clear();
-    ledDetection();
-    motor.stop();
-    Serial.print("Estrategia: ");
     Serial.println(seletorEstrategia.nomeAtual());
   }
 
@@ -110,10 +69,34 @@ void loop() {
       Serial.println("-> sumo stop");
     }
   }
+}
+void LED_Estrategias() {
 
+  decode_results* resultado = moduloStart.ultimoResultado();
+  if (!resultado) return;
+  uint64_t cmd = resultado->value;
 
-// ─────────────────────────────────────────────────────────────
-//  Feedback visual no anel de LEDs conforme estratégia atual
-// ─────────────────────────────────────────────────────────────
+  if (cmd >= 4 && cmd <= 9) { 
+    strategy = cmd;
+  } else return;
 
-
+  if (cmd <= 8) {
+    const int num_leds = cmd % 8;
+    for(uint8_t i = 0; i < num_leds; i++) {
+      switch ((cmd-3) % 6) { 
+        case ESTRATEGIA_1: pixels.setPixelColor(i, pixels.Color(255, 50,  50  )); break; // Vermelho claro
+        case ESTRATEGIA_2: pixels.setPixelColor(i, pixels.Color(0,   255, 100 )); break; // Verde com toque de azul
+        case ESTRATEGIA_3: pixels.setPixelColor(i, pixels.Color(255, 0,   180 )); break; // Magenta
+        case ESTRATEGIA_4: pixels.setPixelColor(i, pixels.Color(255, 140, 0   )); break; // Laranja
+        case ESTRATEGIA_5: pixels.setPixelColor(i, pixels.Color(100, 200, 255 )); break; // Azul claro
+        case ESTRATEGIA_6: pixels.setPixelColor(i, pixels.Color(180, 255, 0   )); break; // Verde-amarelado
+      } pixels.show();
+    }
+    delay(80);
+    for(uint8_t i = 0; i < num_leds; i++) { 
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0)); // Desliga os LEDs
+      pixels.show();
+    }
+    delay(80);
+  }
+}

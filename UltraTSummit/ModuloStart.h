@@ -72,6 +72,22 @@
 #define LEARN_TIMEOUT_MS    10000   // Tempo máximo esperando cada botão (10 s)
 // ─────────────────────────────────────────────────────────────
 
+// ─── Códigos fixos de teste (sempre ativos) ───────────────────
+// Estes 3 códigos SEMPRE funcionam, mesmo depois de você aprender o
+// controle oficial do evento — os dois (fixo e aprendido) acionam o
+// mesmo comando. Ou seja: cada ação (preparar/iniciar/parar) pode ser
+// disparada por 2 controles diferentes ao mesmo tempo. Não precisa
+// mexer em nada disso antes da competição.
+//
+// Troque pelos valores reais do SEU controle de testes: ligue o robô,
+// aponte o controle e aperte os botões — os códigos em hexadecimal
+// aparecem no Serial Monitor (linha "[IR] 0x..."). Copie os 3 valores
+// lidos pra cá.
+#define CODIGO_FIXO_PREPARAR  0x10UL
+#define CODIGO_FIXO_INICIAR   0x810UL
+#define CODIGO_FIXO_PARAR     0x410UL
+// ─────────────────────────────────────────────────────────────
+
 // ─── Namespace na flash ──────────────────────────────────────
 #define NVS_NAMESPACE   "modulostart"
 #define NVS_KEY_PREP    "cmd_preparar"
@@ -115,7 +131,7 @@ public:
     if (digitalRead(BTN_LEARN_PIN) == LOW) {
       _modoAprendizado();   // entra no modo aprendizado
     } else {
-      _carregarCodigos();   // carrega códigos salvos da flash
+      _carregarCodigos();   // carrega o controle aprendido da flash (os fixos já valem sempre)
     }
   }
 
@@ -127,7 +143,7 @@ public:
     uint64_t codigo = _lerIR();
 
     // Parada de emergência — válida em qualquer estado ativo
-    if (codigo != 0 && codigo == _cmd_parar && _estado != START_DESLIGADO) {
+    if (codigo != 0 && _ehParar(codigo) && _estado != START_DESLIGADO) {
       _estado = START_PARADO;
       _log("PARADA DE EMERGENCIA — juiz interrompeu!");
       return;
@@ -138,7 +154,7 @@ public:
       // ── Aguarda PREPARAR ───────────────────────────────────
       case START_DESLIGADO:
         digitalWrite(LED_STATUS_PIN, LOW);
-        if (codigo != 0 && codigo == _cmd_preparar) {
+        if (codigo != 0 && _ehPreparar(codigo)) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
         }
@@ -148,10 +164,10 @@ public:
       case START_PREPARADO:
         // LED pulsa devagar
         digitalWrite(LED_STATUS_PIN, (agora / 700) % 2 == 0);
-        if (codigo != 0 && codigo == _cmd_preparar) {
+        if (codigo != 0 && _ehPreparar(codigo)) {
           _log("(PREPARAR recebido novamente — ja preparado)");
         }
-        else if (codigo != 0 && codigo == _cmd_iniciar) {
+        else if (codigo != 0 && _ehIniciar(codigo)) {
           _tRound = agora;
           _estado = START_COMBATE;
           Serial.println();
@@ -169,7 +185,7 @@ public:
           _log("TEMPO ESGOTADO — fim do round!");
           break;
         }
-        if (codigo != 0 && codigo == _cmd_iniciar) {
+        if (codigo != 0 && _ehIniciar(codigo)) {
           _tRound = agora;
           _log("(INICIAR durante combate — round reiniciado)");
           break;
@@ -180,7 +196,7 @@ public:
       // ── Parado / emergência ────────────────────────────────
       case START_PARADO:
         digitalWrite(LED_STATUS_PIN, (agora / 600) % 2 == 0);
-        if (codigo != 0 && codigo == _cmd_preparar) {
+        if (codigo != 0 && _ehPreparar(codigo)) {
           _estado = START_PREPARADO;
           _log("PREPARADO — aguardando INICIAR do juiz");
         }
@@ -224,12 +240,29 @@ private:
   unsigned long  _tRound      = 0;
   bool           _configurado = false;
   bool _ultimoCodigoValido = false;
-  // Códigos aprendidos — carregados da flash ou pelo aprendizado
+  // Códigos APRENDIDOS — carregados da flash ou pelo modo aprendizado.
+  // 0 = ainda não foi aprendido nenhum código pra esse botão.
+  // Os códigos FIXOS (CODIGO_FIXO_*) são constantes e sempre válidos,
+  // independente destes aqui — os dois funcionam ao mesmo tempo.
   uint64_t _cmd_preparar = 0;
   uint64_t _cmd_iniciar  = 0;
   uint64_t _cmd_parar    = 0;
 
   Preferences _prefs;
+
+  // ===========================================================
+  //  Comparações de botão: aceitam o código FIXO ou o APRENDIDO
+  //  (qualquer um dos dois controles aciona o mesmo comando)
+  // ===========================================================
+  bool _ehPreparar(uint64_t c) {
+    return (c == CODIGO_FIXO_PREPARAR) || (_cmd_preparar != 0 && c == _cmd_preparar);
+  }
+  bool _ehIniciar(uint64_t c) {
+    return (c == CODIGO_FIXO_INICIAR) || (_cmd_iniciar != 0 && c == _cmd_iniciar);
+  }
+  bool _ehParar(uint64_t c) {
+    return (c == CODIGO_FIXO_PARAR) || (_cmd_parar != 0 && c == _cmd_parar);
+  }
 
   // ===========================================================
   //  MODO APRENDIZADO
@@ -248,7 +281,9 @@ private:
     // ── Passo 1: botão PREPARAR ───────────────────────────────
     Serial.println();
     Serial.println("  [1/3] Pressione o botao de PREPARAR...");
-    _cmd_preparar = _aguardarBotao();
+    // Exclui os códigos fixos dos OUTROS botões, pra não aprender por
+    // engano um código que já significa outra coisa
+    _cmd_preparar = _aguardarBotao(CODIGO_FIXO_INICIAR, CODIGO_FIXO_PARAR);
     if (_cmd_preparar == 0) { _erroAprendizado(); return; }
     Serial.print("         Salvo: 0x");
     serialPrintUint64(_cmd_preparar, HEX);
@@ -259,7 +294,8 @@ private:
     // ── Passo 2: botão INICIAR ────────────────────────────────
     Serial.println();
     Serial.println("  [2/3] Pressione o botao de INICIAR...");
-    _cmd_iniciar = _aguardarBotao(_cmd_preparar); // exclui o botão já aprendido
+    // Exclui o já aprendido (preparar) + os códigos fixos dos outros botões
+    _cmd_iniciar = _aguardarBotao(_cmd_preparar, CODIGO_FIXO_PREPARAR, CODIGO_FIXO_PARAR);
     if (_cmd_iniciar == 0) { _erroAprendizado(); return; }
     Serial.print("         Salvo: 0x");
     serialPrintUint64(_cmd_iniciar, HEX);
@@ -270,7 +306,8 @@ private:
     // ── Passo 3: botão PARAR ──────────────────────────────────
     Serial.println();
     Serial.println("  [3/3] Pressione o botao de PARAR...");
-    _cmd_parar = _aguardarBotao(_cmd_preparar, _cmd_iniciar); // exclui os dois anteriores
+    // Exclui os dois já aprendidos + os códigos fixos dos outros botões
+    _cmd_parar = _aguardarBotao(_cmd_preparar, _cmd_iniciar, CODIGO_FIXO_PREPARAR, CODIGO_FIXO_INICIAR);
     if (_cmd_parar == 0) { _erroAprendizado(); return; }
     Serial.print("         Salvo: 0x");
     serialPrintUint64(_cmd_parar, HEX);
@@ -300,7 +337,7 @@ private:
   //  Rejeita automaticamente: repeat, códigos já usados,
   //  valores inválidos, e botão pressionado continuamente
   // ===========================================================
-  uint64_t _aguardarBotao(uint64_t excluir1 = 0, uint64_t excluir2 = 0) {
+  uint64_t _aguardarBotao(uint64_t excluir1 = 0, uint64_t excluir2 = 0, uint64_t excluir3 = 0, uint64_t excluir4 = 0) {
     unsigned long inicio = millis();
 
     while (millis() - inicio < LEARN_TIMEOUT_MS) {
@@ -316,12 +353,12 @@ private:
       // Rejeita: repeat, inválido, zero
       if (codigo == 0xFFFFFFFFFFFFFFFFULL || codigo == 0) continue;
 
-      // Rejeita se for igual a um botão já aprendido
-      if (excluir1 != 0 && codigo == excluir1) {
-        Serial.println("    (botao ja usado — pressione um diferente)");
-        continue;
-      }
-      if (excluir2 != 0 && codigo == excluir2) {
+      // Rejeita se for igual a um código já usado por outro botão
+      // (já aprendido nesta sessão, ou fixo de outra ação)
+      if ((excluir1 != 0 && codigo == excluir1) ||
+          (excluir2 != 0 && codigo == excluir2) ||
+          (excluir3 != 0 && codigo == excluir3) ||
+          (excluir4 != 0 && codigo == excluir4)) {
         Serial.println("    (botao ja usado — pressione um diferente)");
         continue;
       }
@@ -349,7 +386,10 @@ private:
   }
 
   // ===========================================================
-  //  Carrega os códigos salvos da memória flash (NVS)
+  //  Carrega os códigos APRENDIDOS salvos na memória flash (NVS).
+  //  Os códigos FIXOS (topo do arquivo) valem sempre, independente
+  //  de ter ou não um controle aprendido — os dois funcionam juntos,
+  //  pra sempre. Não é preciso mexer em nada antes da competição.
   // ===========================================================
   void _carregarCodigos() {
     _prefs.begin(NVS_NAMESPACE, true); // true = somente leitura
@@ -362,23 +402,25 @@ private:
       _configurado  = true;
       _prefs.end();
 
-      Serial.println("  Codigos IR carregados da memoria flash:");
+      Serial.println("  Controle oficial aprendido (carregado da flash):");
       _imprimirCodigos();
-      Serial.println("  Aguardando comando PREPARAR do juiz...");
-      Serial.println("------------------------------------------");
-      _blink(2, 300);
-
     } else {
       _prefs.end();
-      _configurado = false;
+      _configurado = false; // nenhum controle oficial aprendido ainda
 
-      // Nunca foi configurado — avisa no serial e pisca SOS
       Serial.println();
-      Serial.println("  !! ATENÇÃO: nenhum controle aprendido ainda !!");
-      Serial.println("  Ligue segurando o botao BOOT para configurar.");
-      Serial.println("------------------------------------------");
-      _blinkSOS();
+      Serial.println("  Nenhum controle oficial aprendido ainda.");
+      Serial.println("  (segure o BOOT ao ligar pra aprender um — ele passa a");
+      Serial.println("   funcionar junto com os fixos, sem substituir nada)");
     }
+
+    Serial.println("  Codigos FIXOS de teste (sempre ativos, mesmo com um controle aprendido):");
+    Serial.print  ("    PREPARAR: 0x"); serialPrintUint64(CODIGO_FIXO_PREPARAR, HEX); Serial.println();
+    Serial.print  ("    INICIAR : 0x"); serialPrintUint64(CODIGO_FIXO_INICIAR,  HEX); Serial.println();
+    Serial.print  ("    PARAR   : 0x"); serialPrintUint64(CODIGO_FIXO_PARAR,    HEX); Serial.println();
+    Serial.println("  Aguardando comando PREPARAR...");
+    Serial.println("------------------------------------------");
+    _blink(2, 300);
   }
 
   // ===========================================================
@@ -408,9 +450,9 @@ private:
 
   void _imprimirCodigos() {
     Serial.println("  ┌─────────────────────────────────────┐");
-    Serial.print  ("  │  PREPARAR : 0x"); serialPrintUint64(_cmd_preparar, HEX); Serial.println();
-    Serial.print  ("  │  INICIAR  : 0x"); serialPrintUint64(_cmd_iniciar,  HEX); Serial.println();
-    Serial.print  ("  │  PARAR    : 0x"); serialPrintUint64(_cmd_parar,    HEX); Serial.println();
+    Serial.print  ("  │  PREPARAR (aprendido) : 0x"); serialPrintUint64(_cmd_preparar, HEX); Serial.println();
+    Serial.print  ("  │  INICIAR  (aprendido) : 0x"); serialPrintUint64(_cmd_iniciar,  HEX); Serial.println();
+    Serial.print  ("  │  PARAR    (aprendido) : 0x"); serialPrintUint64(_cmd_parar,    HEX); Serial.println();
     Serial.println("  └─────────────────────────────────────┘");
   }
 

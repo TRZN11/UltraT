@@ -29,17 +29,18 @@ void setup() {
 }
 
 void LED_Estrategias() {
-uint32_t cores[6] = {
+uint32_t cores[7] = {
     pixels.Color(0,125,125),   // 1 — (iSeeYou)
     pixels.Color(0,125,125),   // 2 — (Whiplash)
     pixels.Color(0,125,125),   // 3 — (Sharingan)
     pixels.Color(0,125,125),   // 4 — (SeekAndDestroy L)
     pixels.Color(0,125,125),   // 5 — (SeekAndDestroy R)
     pixels.Color(0,125,125),   // 6 — (Para Tras)
+    pixels.Color(0,125,125),   // 0 — (Calibragem)
   };
 
-  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 5
-  int num_leds = idx + 1;                             // 1 a 6 LEDs
+  int idx      = seletorEstrategia.estrategiaAtual(); // 0 a 6
+  int num_leds = idx + 1;                             // 1 a 7 LEDs
 
   pixels.clear();
   for (int i = 0; i < num_leds; i++) {
@@ -90,6 +91,7 @@ void loop() {
       case ESTRATEGIA_4: SeekAndDestroy_L(); break;
       case ESTRATEGIA_5: SeekAndDestroy_R(); break;
       case ESTRATEGIA_6: paraTras();         break;
+      case ESTRATEGIA_0: Calibragem();       break;
     }
   }
 

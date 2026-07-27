@@ -16,6 +16,7 @@ int vel_base = 550;
 float erro_linha = 0, erro_linha_anterior = 0;
 float P = 0, I = 0, D = 0, PID = 0;
 float Kp = 450.0, Ki = 0.0, Kd = 0.0;
+bool alvoDetectado = false; // true = pelo menos um sensor está vendo o oponente
 
 // Tempo
 unsigned long last_time = 0;
@@ -50,9 +51,12 @@ void calculoErroSensor() {
 
   if (ativos > 0) {
     erro_linha = soma_pesos / ativos;
+    alvoDetectado = true;
   } else {
-    // Nenhum obstáculo: mantém direção anterior
-    erro_linha = erro_linha > 0 ? 5 : -5;
+    // Nenhum sensor vendo o oponente: erro neutro -> robô fica PARADO
+    // (ver iSeeYou()/Calibragem(), que checam alvoDetectado antes de mover)
+    erro_linha = 0;
+    alvoDetectado = false;
   }
 }
 
@@ -77,6 +81,11 @@ void iSeeYou() { // não é uma estratégia e sim o ataque principal, mas pode s
   leituraSensores();
   pid();
 
+  if (!alvoDetectado) {
+    motor.stop(); // sem nenhum sensor vendo o oponente -> fica parado, não gira à toa
+    return;
+  }
+
   int velocidade_esq =  - PID;
   int velocidade_dir =  + PID;
 
@@ -85,7 +94,29 @@ void iSeeYou() { // não é uma estratégia e sim o ataque principal, mas pode s
 
   
   if (PID == 0) {
-    motor.move(1023, 1023);
+    motor.move(1023, 1023); // alvo detectado e perfeitamente centralizado -> avança em linha reta
+  } else {
+    motor.move(velocidade_esq, velocidade_dir);
+  }
+}
+void Calibragem() { // MODO TESTE DE CALIBRAGEM DO PID
+  leituraSensores();
+  pid();
+
+  if (!alvoDetectado) {
+    motor.stop(); // sem alvo -> parado
+    return;
+  }
+
+  int velocidade_esq =  - PID;
+  int velocidade_dir =  + PID;
+
+  velocidade_esq = constrain(velocidade_esq, -1023, 1023);
+  velocidade_dir = constrain(velocidade_dir, -1023, 1023);
+
+  
+  if (PID == 0) {
+    motor.stop();
   } else {
     motor.move(velocidade_esq, velocidade_dir);
   }

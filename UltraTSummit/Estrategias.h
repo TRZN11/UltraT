@@ -13,7 +13,7 @@ void paraTras() { // estratégia número 6 no controle
 
 
 int      SND_L_EXTERNO    = 1023;
-int      SND_L_INTERNO    = 700;   // CALIBRE AQUI — curvatura da busca ESQUERDA
+int      SND_L_INTERNO    = 650;   // CALIBRE AQUI — curvatura da busca ESQUERDA
 uint32_t SND_L_DURACAO_MS = 800;   // CALIBRE AQUI — duração do semicírculo esquerdo (ms)
 
 int      SND_R_EXTERNO    = 1023;
